@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/CalculadoraSurebets/static/css/main.6164422a.css",
-    "main.js": "/CalculadoraSurebets/static/js/main.7054ad44.js",
+    "main.css": "/CalculadoraSurebets/static/css/main.d7119c27.css",
+    "main.js": "/CalculadoraSurebets/static/js/main.e96e5ba3.js",
     "static/js/453.098e48a5.chunk.js": "/CalculadoraSurebets/static/js/453.098e48a5.chunk.js",
     "index.html": "/CalculadoraSurebets/index.html",
-    "main.6164422a.css.map": "/CalculadoraSurebets/static/css/main.6164422a.css.map",
-    "main.7054ad44.js.map": "/CalculadoraSurebets/static/js/main.7054ad44.js.map",
+    "main.d7119c27.css.map": "/CalculadoraSurebets/static/css/main.d7119c27.css.map",
+    "main.e96e5ba3.js.map": "/CalculadoraSurebets/static/js/main.e96e5ba3.js.map",
     "453.098e48a5.chunk.js.map": "/CalculadoraSurebets/static/js/453.098e48a5.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.6164422a.css",
-    "static/js/main.7054ad44.js"
+    "static/css/main.d7119c27.css",
+    "static/js/main.e96e5ba3.js"
   ]
 }
