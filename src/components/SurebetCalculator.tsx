@@ -1,6 +1,5 @@
-import { useState } from "react"
-
-import React from "react"
+import { useState, useEffect } from "react"
+import { ThemeToggle } from "./ThemeToggle"
 
 export const SurebetCalculator = () => {
   const [totalAmount, setTotalAmount] = useState("")
@@ -8,40 +7,45 @@ export const SurebetCalculator = () => {
   const [oddsB, setOddsB] = useState("")
   const [teamA, setTeamA] = useState("")
   const [teamB, setTeamB] = useState("")
-  const [classicSurebet, setClassicSurebet] = useState(false)
+  const [strategy, setStrategy] = useState<"classic" | "underdog" | "favorite">(
+    "classic"
+  )
   const [strategyText, setStrategyText] = useState("")
   const [resultHTML, setResultHTML] = useState("")
   const [error, setError] = useState("")
-  const [isDark, setIsDark] = useState(false)
+  const [isDark, setIsDark] = useState(true)
 
-  // Estrategia
-  React.useEffect(() => {
-    if (classicSurebet) {
+  // Estrategia - descripción
+  useEffect(() => {
+    if (strategy === "classic") {
       setStrategyText(
         `<p class="font-bold mb-1 text-blue-600 dark:text-blue-400">🛡️ Estrategia Clásica</p>
         <p class="text-gray-700 dark:text-gray-300">Aseguras una <strong>ganancia pequeña y garantizada</strong> sin importar quién gane.</p>`
       )
-    } else {
+    } else if (strategy === "underdog") {
       setStrategyText(
-        `<p class="font-bold mb-1 text-yellow-500 dark:text-yellow-400">💰 Estrategia de Mayor Ganancia</p>
+        `<p class="font-bold mb-1 text-yellow-500 dark:text-yellow-400">💰 Mayor Ganancia con Underdog</p>
         <p class="text-gray-700 dark:text-gray-300">Maximizas tu ganancia si gana el desfavorecido. Si gana el favorito, recuperas tu inversión.</p>`
       )
+    } else {
+      setStrategyText(
+        `<p class="font-bold mb-1 text-purple-500 dark:text-purple-400">🔥 Mayor Ganancia con Favorito</p>
+        <p class="text-gray-700 dark:text-gray-300">Maximizas tu ganancia si gana el favorito. Si gana el underdog, recuperas tu inversión.</p>`
+      )
     }
-  }, [classicSurebet])
+  }, [strategy])
 
-  React.useEffect(() => {
-    // Aplicar la clase dark al html cuando isDark cambie
+  // Dark mode
+  useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add("dark")
     } else {
       document.documentElement.classList.remove("dark")
     }
-    // Guardar en localStorage
     localStorage.setItem("darkMode", isDark.toString())
   }, [isDark])
 
-  // Al montar, leer preferencia guardada o del sistema
-  React.useEffect(() => {
+  useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode")
     if (savedTheme !== null) {
       setIsDark(savedTheme === "true")
@@ -53,9 +57,7 @@ export const SurebetCalculator = () => {
     }
   }, [])
 
-  // Función para el botón
   const toggleDarkMode = () => {
-    console.log("Toggling dark mode")
     setIsDark((prev) => !prev)
   }
 
@@ -94,9 +96,9 @@ export const SurebetCalculator = () => {
 
     if (margin < 1) {
       let favoriteTeam, favoriteOdds, underdogTeam, underdogOdds
-      let betOnFavorite, betOnUnderdog
+      let betOnFavorite = 0,
+        betOnUnderdog = 0
       let profitFavorite, profitUnderdog, returnFavorite, returnUnderdog
-      let strategyDetails = ""
 
       if (odds1 < odds2) {
         favoriteTeam = teamA
@@ -110,12 +112,16 @@ export const SurebetCalculator = () => {
         underdogOdds = odds1
       }
 
-      if (classicSurebet) {
+      // Estrategias
+      if (strategy === "classic") {
         betOnFavorite = total / (1 + favoriteOdds / underdogOdds)
         betOnUnderdog = total - betOnFavorite
-      } else {
+      } else if (strategy === "underdog") {
         betOnFavorite = total / favoriteOdds
         betOnUnderdog = total - betOnFavorite
+      } else if (strategy === "favorite") {
+        betOnUnderdog = total / underdogOdds
+        betOnFavorite = total - betOnUnderdog
       }
 
       returnFavorite = betOnFavorite * favoriteOdds
@@ -123,7 +129,7 @@ export const SurebetCalculator = () => {
       profitFavorite = returnFavorite - total
       profitUnderdog = returnUnderdog - total
 
-      strategyDetails = `
+      const strategyDetails = `
          <div class="grid grid-cols-1 gap-4">
     <div class="bg-green-50 dark:bg-green-900/50 p-3 rounded-lg border border-green-200 dark:border-green-700">
       <p class="font-semibold text-green-800 dark:text-green-200">Si gana ${favoriteTeam}:</p>
@@ -152,11 +158,15 @@ export const SurebetCalculator = () => {
       `
 
       setResultHTML(`
-        <h2 class="text-xl font-bold text-center text-green-600 dark:text-green-400 mb-4">${
-          classicSurebet
-            ? "Estrategia Tradicional: Ganancia garantizada"
-            : "Estrategia de Mayor Ganancia"
-        }</h2>
+        <h2 class="text-xl font-bold text-center text-green-600 dark:text-green-400 mb-4">
+          ${
+            strategy === "classic"
+              ? "Estrategia Tradicional: Ganancia garantizada"
+              : strategy === "underdog"
+              ? "Estrategia de Mayor Ganancia (Underdog)"
+              : "Estrategia de Mayor Ganancia (Favorito)"
+          }
+        </h2>
         <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg text-center mb-4">
           <p class="text-sm text-gray-600 dark:text-gray-300">Margen a tu favor</p>
           <p class="text-2xl font-bold text-green-600 dark:text-green-400">${(
@@ -217,12 +227,7 @@ export const SurebetCalculator = () => {
               Encuentra ganancias seguras
             </p>
           </div>
-          <button
-            onClick={toggleDarkMode}
-            className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {isDark ? "🌙" : "☀️"}
-          </button>
+          <ThemeToggle isDark={isDark} toggleDarkMode={toggleDarkMode} />
         </div>
 
         <div className="space-y-4">
@@ -293,18 +298,23 @@ export const SurebetCalculator = () => {
             </div>
           </div>
 
-          <div className="flex items-center mt-4">
-            <label className="toggle-switch-container">
-              <input
-                type="checkbox"
-                checked={classicSurebet}
-                onChange={(e) => setClassicSurebet(e.target.checked)}
-              />
-              <span className="slider"></span>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Estrategia
             </label>
-            <span className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-              Ganancia Uniforme
-            </span>
+            <select
+              value={strategy}
+              onChange={(e) =>
+                setStrategy(
+                  e.target.value as "classic" | "underdog" | "favorite"
+                )
+              }
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="classic">Ganancia Uniforme (Clásica)</option>
+              <option value="underdog">Mayor Ganancia (Underdog)</option>
+              <option value="favorite">Mayor Ganancia (Favorito)</option>
+            </select>
           </div>
 
           <div
