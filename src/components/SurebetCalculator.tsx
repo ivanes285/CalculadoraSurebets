@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { ThemeToggle } from "./ThemeToggle"
+import { getRecommendation } from "../utils"
 
 export const SurebetCalculator = () => {
   const [totalAmount, setTotalAmount] = useState("")
@@ -75,7 +76,7 @@ export const SurebetCalculator = () => {
     setError("")
     setResultHTML("")
 
-    const total = parseFloat(totalAmount.replace(",", "."))
+    const total = Math.round(parseFloat(totalAmount.replace(",", ".")))
     const odds1 = parseFloat(oddsA.replace(",", "."))
     const odds2 = parseFloat(oddsB.replace(",", "."))
 
@@ -115,7 +116,7 @@ export const SurebetCalculator = () => {
         underdogOdds = odds1
       }
 
-      // cálculo original de stakes (mantengo tu lógica)
+      // cálculo de apuestas según estrategia
       if (strategy === "classic") {
         betOnFavorite = total / (1 + favoriteOdds / underdogOdds)
         betOnUnderdog = total - betOnFavorite
@@ -127,87 +128,50 @@ export const SurebetCalculator = () => {
         betOnFavorite = total - betOnUnderdog
       }
 
-      // Usaremos usedTotal para las comprobaciones cuando redondeemos
-      let usedTotal = total
+      // **Siempre redondeamos a enteros**
+      betOnFavorite = Math.floor(betOnFavorite)
+      betOnUnderdog = total - betOnFavorite
 
-      if (roundToInteger) {
-        const totalInt = Math.round(total) // monto entero que queremos usar
-        usedTotal = totalInt
-
-        // redondeo inicial: floor en favorito y resto al underdog para que la suma sea totalInt
-        betOnFavorite = Math.floor(betOnFavorite)
-        betOnUnderdog = totalInt - betOnFavorite
-
-        // protección por si queda negativo
-        if (betOnUnderdog < 0) {
-          betOnUnderdog = 0
-          betOnFavorite = totalInt
-        }
-
-        // recalculamos retornos/beneficios usando usedTotal
-        returnFavorite = betOnFavorite * favoriteOdds
-        returnUnderdog = betOnUnderdog * underdogOdds
-        profitFavorite = returnFavorite - usedTotal
-        profitUnderdog = returnUnderdog - usedTotal
-
-        // Si alguna ganancia es negativa intentamos ajustar moviendo stake dentro del totalInt
-        if (profitFavorite < 0) {
-          // mínimo entero que necesita la apuesta al favorito para que profitFavorite >= 0
-          const requiredFav = Math.ceil(usedTotal / favoriteOdds)
-          if (requiredFav <= totalInt) {
-            betOnFavorite = requiredFav
-            betOnUnderdog = totalInt - betOnFavorite
-          }
-          // si requiredFav > totalInt no se puede arreglar sin aumentar el total
-        } else if (profitUnderdog < 0) {
-          const requiredUnd = Math.ceil(usedTotal / underdogOdds)
-          if (requiredUnd <= totalInt) {
-            betOnUnderdog = requiredUnd
-            betOnFavorite = totalInt - betOnUnderdog
-          }
-        }
-
-        // recalculamos finales
-        returnFavorite = betOnFavorite * favoriteOdds
-        returnUnderdog = betOnUnderdog * underdogOdds
-        profitFavorite = returnFavorite - usedTotal
-        profitUnderdog = returnUnderdog - usedTotal
-      } else {
-        // sin redondeo: usar total real
-        usedTotal = total
-        returnFavorite = betOnFavorite * favoriteOdds
-        returnUnderdog = betOnUnderdog * underdogOdds
-        profitFavorite = returnFavorite - usedTotal
-        profitUnderdog = returnUnderdog - usedTotal
+      // protección por si queda negativo
+      if (betOnUnderdog < 0) {
+        betOnUnderdog = 0
+        betOnFavorite = total
       }
 
-      // ... el resto de tu código para construir resultHTML permanece igual,
-      // pero usa usedTotal en vez de total cuando quieras mostrar el total real (enteros vs float)
+      // calculamos retornos y ganancias
+      returnFavorite = betOnFavorite * favoriteOdds
+      returnUnderdog = betOnUnderdog * underdogOdds
+      profitFavorite = returnFavorite - total
+      profitUnderdog = returnUnderdog - total
+
+      const recommendationHTML = getRecommendation(
+        odds1,
+        odds2,
+        total,
+        teamA,
+        teamB
+      )
 
       const strategyDetails = `
       <div class="grid grid-cols-1 gap-4">
         <div class="bg-green-50 dark:bg-green-900/50 p-3 rounded-lg border border-green-200 dark:border-green-700">
           <p class="font-semibold text-green-800 dark:text-green-200">Si gana ${favoriteTeam}:</p>
-          <p class="text-green-600 dark:text-green-400 font-bold text-lg">
-            Recuperas $${returnFavorite.toFixed(2)}
-          </p>
-          <p class="text-gray-700 dark:text-gray-300">
-            Ganancia neta: <span class="font-bold">$${profitFavorite.toFixed(
-              2
-            )}</span>
-          </p>
+          <p class="text-green-600 dark:text-green-400 font-bold text-lg">Recuperas $${returnFavorite.toFixed(
+            2
+          )}</p>
+          <p class="text-gray-700 dark:text-gray-300">Ganancia neta: <span class="font-bold">$${profitFavorite.toFixed(
+            2
+          )}</span></p>
         </div>
 
         <div class="bg-yellow-50 dark:bg-yellow-900/50 p-3 rounded-lg border border-yellow-200 dark:border-yellow-700">
           <p class="font-semibold text-yellow-800 dark:text-yellow-200">Si gana ${underdogTeam}:</p>
-          <p class="text-yellow-600 dark:text-yellow-400 font-bold text-lg">
-            Recuperas $${returnUnderdog.toFixed(2)}
-          </p>
-          <p class="text-gray-700 dark:text-gray-300">
-            Ganancia neta: <span class="font-bold">$${profitUnderdog.toFixed(
-              2
-            )}</span>
-          </p>
+          <p class="text-yellow-600 dark:text-yellow-400 font-bold text-lg">Recuperas $${returnUnderdog.toFixed(
+            2
+          )}</p>
+          <p class="text-gray-700 dark:text-gray-300">Ganancia neta: <span class="font-bold">$${profitUnderdog.toFixed(
+            2
+          )}</span></p>
         </div>
       </div>
     `
@@ -222,13 +186,7 @@ export const SurebetCalculator = () => {
             : "Estrategia de Mayor Ganancia (Favorito)"
         }
       </h2>
-      <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg text-center mb-4">
-        <p class="text-sm text-gray-600 dark:text-gray-300">Margen a tu favor</p>
-        <p class="text-2xl font-bold text-green-600 dark:text-green-400">${(
-          (1 - margin) *
-          100
-        ).toFixed(2)}%</p>
-      </div>
+    
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center flex-col">
           <p class="font-semibold text-gray-800 dark:text-white">Apostar en ${favoriteTeam}</p>
@@ -248,6 +206,7 @@ export const SurebetCalculator = () => {
       <div class="mt-4 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg text-sm text-gray-700 dark:text-gray-300">
         ${strategyDetails}
       </div>
+      ${recommendationHTML}
     `)
     } else {
       const bookieMargin = (margin - 1) * 100
@@ -380,18 +339,6 @@ export const SurebetCalculator = () => {
               <option value="underdog">Mayor Ganancia (Underdog)</option>
               <option value="favorite">Mayor Ganancia (Favorito)</option>
             </select>
-          </div>
-
-          <div className="flex items-center space-x-2 mt-2">
-            <input
-              type="checkbox"
-              checked={roundToInteger}
-              onChange={() => setRoundToInteger((prev) => !prev)}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-gray-700 dark:text-gray-300 text-sm">
-              Mostrar apuestas en enteros
-            </span>
           </div>
 
           <div
