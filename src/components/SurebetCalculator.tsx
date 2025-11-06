@@ -3,7 +3,7 @@ import { ThemeToggle } from "./ThemeToggle"
 import { getRecommendation } from "../utils"
 
 export const SurebetCalculator = () => {
-  const [totalAmount, setTotalAmount] = useState("")
+ const [totalAmount, setTotalAmount] = useState("")
   const [oddsA, setOddsA] = useState("")
   const [oddsB, setOddsB] = useState("")
   const [teamA, setTeamA] = useState("")
@@ -15,23 +15,23 @@ export const SurebetCalculator = () => {
   const [resultHTML, setResultHTML] = useState("")
   const [error, setError] = useState("")
   const [isDark, setIsDark] = useState(true)
-  const [roundToInteger, setRoundToInteger] = useState(false)
+  const [roundToInteger, setRoundToInteger] = useState(false) // Este estado no se usa, pero lo dejo por si acaso
 
   useEffect(() => {
     if (strategy === "classic") {
       setStrategyText(
         `<p class="font-bold mb-1 text-blue-600 dark:text-blue-400">🛡️ Estrategia Clásica</p>
-        <p class="text-gray-700 dark:text-gray-300">Aseguras una <strong>ganancia pequeña y garantizada</strong> sin importar quién gane.</p>`
+         <p class="text-gray-700 dark:text-gray-300">Aseguras una <strong>ganancia pequeña y garantizada</strong> sin importar quién gane.</p>`
       )
     } else if (strategy === "underdog") {
       setStrategyText(
         `<p class="font-bold mb-1 text-yellow-500 dark:text-yellow-400">💰 Mayor Ganancia con Underdog</p>
-        <p class="text-gray-700 dark:text-gray-300">Maximizas tu ganancia si gana el desfavorecido. Si gana el favorito, recuperas tu inversión.</p>`
+         <p class="text-gray-700 dark:text-gray-300">Maximizas tu ganancia si gana el desfavorecido. Si gana el favorito, recuperas tu inversión.</p>`
       )
     } else {
       setStrategyText(
         `<p class="font-bold mb-1 text-purple-500 dark:text-purple-400">🔥 Mayor Ganancia con Favorito</p>
-        <p class="text-gray-700 dark:text-gray-300">Maximizas tu ganancia si gana el favorito. Si gana el underdog, recuperas tu inversión.</p>`
+         <p class="text-gray-700 dark:text-gray-300">Maximizas tu ganancia si gana el favorito. Si gana el underdog, recuperas tu inversión.</p>`
       )
     }
   }, [strategy])
@@ -69,14 +69,15 @@ export const SurebetCalculator = () => {
     setTeamB("")
     setError("")
     setResultHTML("")
-    setRoundToInteger(false)
+    setRoundToInteger(false) // Este estado no parece usarse
   }
 
   const calculateBets = () => {
     setError("")
     setResultHTML("")
 
-    const total = Math.round(parseFloat(totalAmount.replace(",", ".")))
+    // <-- CAMBIO: Quitado Math.round() para permitir decimales en el total
+    const total = parseFloat(totalAmount.replace(",", "."))
     const odds1 = parseFloat(oddsA.replace(",", "."))
     const odds2 = parseFloat(oddsB.replace(",", "."))
 
@@ -124,18 +125,22 @@ export const SurebetCalculator = () => {
         betOnFavorite = total / favoriteOdds
         betOnUnderdog = total - betOnFavorite
       } else {
+        // Estrategia "favorito"
         betOnUnderdog = total / underdogOdds
         betOnFavorite = total - betOnUnderdog
       }
 
-      // **Siempre redondeamos a enteros**
-      betOnFavorite = Math.floor(betOnFavorite)
-      betOnUnderdog = total - betOnFavorite
+      // <-- CAMBIO: Se eliminó el bloque que redondeaba a enteros
+      // (ya no se usa Math.floor(betOnFavorite) ni se recalcula betOnUnderdog)
 
       // protección por si queda negativo
       if (betOnUnderdog < 0) {
         betOnUnderdog = 0
         betOnFavorite = total
+      }
+      if (betOnFavorite < 0) {
+        betOnFavorite = 0
+        betOnUnderdog = total
       }
 
       // calculamos retornos y ganancias
@@ -191,14 +196,14 @@ export const SurebetCalculator = () => {
         <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center flex-col">
           <p class="font-semibold text-gray-800 dark:text-white">Apostar en ${favoriteTeam}</p>
           <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">$${betOnFavorite.toFixed(
-            0
+            2
           )}</p>
           <p class="text-sm text-gray-500 dark:text-gray-400">a cuota ${favoriteOdds}</p>
         </div>
         <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center flex-col">
           <p class="font-semibold text-gray-800 dark:text-white">Apostar en ${underdogTeam}</p>
           <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">$${betOnUnderdog.toFixed(
-            0
+            2
           )}</p>
           <p class="text-sm text-gray-500 dark:text-gray-400">a cuota ${underdogOdds}</p>
         </div>
@@ -206,7 +211,6 @@ export const SurebetCalculator = () => {
       <div class="mt-4 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg text-sm text-gray-700 dark:text-gray-300">
         ${strategyDetails}
       </div>
-      ${recommendationHTML}
     `)
     } else {
       const bookieMargin = (margin - 1) * 100
